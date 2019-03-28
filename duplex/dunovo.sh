@@ -9,10 +9,11 @@ function validate {
     return 1
   fi
   name=$(grep -B 1 $last_bar $dir/refdir/barcodes.fa | head -n 1 | tail -c +2)
-  if ! [[ $(awkt '$1 == '$name $dir/correct.sam | wc -l) -gt 0 ]]; then
+  if ! [[ $(awk -F '\t' '$1 == '$name $dir/correct.sam | wc -l) -gt 0 ]]; then
     echo "Last family $last_bar doesn't appear in the $dir/correct.sam alignment." >&2
     return 1
   fi
+  echo "baralign.sh seems to have worked on $dir!"
   return 0
 }
 if ! [[ -d "dunovo$i" ]]; then
@@ -29,7 +30,6 @@ srun -C new --mem 100G ~/code/dunovo-clean/baralign.sh dunovo$i/families.tsv dun
   dunovo$i/correct.sam
 sleep 1m
 validate dunovo$i
-last_bar=$(cut -f 1 dunovo$i/families.tsv | tail -n 1)
 srun -C new -J correct --mem 100G ~/code/dunovo-clean/correct.py --dist 3 --mapq 20 \
     --pos 2 dunovo$i/families.tsv dunovo$i/refdir/barcodes.fa dunovo$i/correct.sam \
   | srun -C new -J sort2 -c 64 --mem 100G sort -S 80% --parallel 60 \
